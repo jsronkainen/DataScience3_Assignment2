@@ -81,7 +81,7 @@ x_trainAndtest<-rbind(x_train, x_test)
 
 #And let's save that into a csv file
 x_trainAndtestMatrix<-as.matrix(x_trainAndtest)
-write.csv(x_trainAndtestMatrix, file="x_trainAndtest.csv", row.names=FALSE)
+write.table(x_trainAndtestMatrix, file="x_trainAndtest.txt", row.name=FALSE)
 
 # And finally, let's create a second, independent tidy 
 # data set with the average of each variable for each activity and each subject.
@@ -95,4 +95,4 @@ x_averagesSubjectActivity$activityDescr<-lapply(x_averagesSubjectActivity$activi
 #and write a new clean tidy data set into csv file
 #And let's save that into a csv file
 x_averagesSubjectActivity<-as.matrix(x_averagesSubjectActivity)
-write.csv(x_averagesSubjectActivity, file="x_averagesSubjectActivity.csv", row.names=FALSE)
+write.table(x_averagesSubjectActivity, file="x_avereagesSubjectActivity.txt", row.name=FALSE)

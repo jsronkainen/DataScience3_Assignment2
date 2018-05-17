@@ -2,7 +2,9 @@
 title: "Code Book to Accompany run_analysis.R script"
 author: "Juha Ronkainen"
 date: "17/05/2018"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +28,6 @@ The aim of this Code Book is to explain how to get the data,
 what are the variables and what transformations has been done in order
 to pull out the results. 
 
-## Download and unzip the data
 The data is available online:
 ```{r}
 destfile="./Fprojectfiles.zip"
@@ -81,6 +82,7 @@ x_train<-X_train[c(1:6, 41:46, 81:86, 121:126, 161:166, 201, 202, 214,215, 227, 
 x_test<-X_test[c(1:6, 41:46, 81:86, 121:126, 161:166, 201, 202, 214,215, 227, 228, 240, 241, 253,254, 266:271, 345, 350, 373,374,375, 424:429, 452:454, 503,504, 513, 516,517, 529, 530, 539, 542,543, 555:561)]
 ```
 Then we added columns on users (subject_train) and activity (y_test). Furthermore, we replaced activity codes (1-6) with more descriptive names as given in activity_labels.txt file. 
+
 ```{r echo=FALSE, results=FALSE}
 x_train$subject<-subject_train[,1]
 subject_test<-rbind(subject_test, 24)
@@ -108,18 +110,23 @@ x_train$activityDescr<-lapply(x_train$activity, transform)
 x_test$activityDescr<-lapply(x_test$activity, transform)
 ```
 
-Finally we merged our two precious data frames x_train and x_test into a massive clean data frame, transformed that into a matrix and saved a csv file (x_trainAndtest.csv) for future generations to enjoy
+Finally we merged our two precious data frames x_train and x_test into a massive clean data frame, transformed that into a matrix and saved a csv file (x_trainAndtest.csv) for future generations to enjoy. 
+
 ```{r echo=FALSE, results=FALSE}
 #And now, let's merge the data into one massive (but clean) dataset
 x_trainAndtest<-rbind(x_train, x_test)
 
 #And let's save that into a csv file
 x_trainAndtestMatrix<-as.matrix(x_trainAndtest)
-write.csv(x_trainAndtestMatrix, file="x_trainAndtest.csv", row.names=FALSE)
+write.table(x_trainAndtestMatrix, file="x_trainAndtest.txt", row.name=FALSE)
 ```
 Resulting matrix is sizable: 
 ```{r echo=FALSE, results=TRUE}
 dim(x_trainAndtest)
+```
+and it looks like this:
+```{r}
+head(x_trainAndtest)
 ```
 
 And finally, we created a second, independent tidy 
@@ -133,10 +140,14 @@ x_averagesSubjectActivity$activityDescr<-lapply(x_averagesSubjectActivity$activi
 #and write a new clean tidy data set into csv file
 #And let's save that into a csv file
 x_averagesSubjectActivity<-as.matrix(x_averagesSubjectActivity)
-write.csv(x_averagesSubjectActivity, file="x_averagesSubjectActivity.csv", row.names=FALSE)
+write.table(x_averagesSubjectActivity, file="x_avereagesSubjectActivity.txt", row.name=FALSE)
 ```
 
 This second clean and neat data set is much more compact:
 ```{r echo=FALSE, results=TRUE}
 dim(x_averagesSubjectActivity)
+```
+and it looks like this
+```{r}
+head(x_averagesSubjectActivity)
 ```
