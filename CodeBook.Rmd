@@ -1,0 +1,142 @@
+---
+title: "Code Book to Accompany run_analysis.R script"
+author: "Juha Ronkainen"
+date: "17/05/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE, results=FALSE}
+#Install packages, if needed
+#The first block of code just makes sure, you have the downloader package installed, and if not it proceeds to install it. Note that the reusults of this code chunk are deliberately hidden, as it is just so boring and takes half of the document. 
+list.of.packages <- c("downloader", "ggplot2", "timeDate", "gridExtra", "plyr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+library(downloader)
+library(ggplot2)
+library(timeDate)
+library(gridExtra)
+library(plyr)
+```
+#Code Book to accompany run_analysis.R script
+The aim of this Code Book is to explain how to get the data, 
+what are the variables and what transformations has been done in order
+to pull out the results. 
+
+## Download and unzip the data
+The data is available online:
+```{r}
+destfile="./Fprojectfiles.zip"
+if (!file.exists(destfile)){
+download.file("https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip", destfile, method="curl")
+unzData<-unzip("Fprojectfiles.zip", exdir = "./data/")
+}
+```
+All text files included in the dataset have been transformed into data frames. It is a long and cumbersome bulk script, which you can check out in the run_analysis.R script. 
+
+```{r echo=FALSE, results=FALSE}
+csv_files_data <- list.files(path = "./data/UCI HAR dataset/", pattern = "*.txt", full.names=TRUE)
+list2env(setNames(lapply(csv_files_data, read.csv), basename(tools::file_path_sans_ext(csv_files_data))), globalenv())
+
+csv_files_data_test <- list.files(path = "./data/UCI HAR dataset/test", pattern = "*.txt", full.names=TRUE)
+list2env(setNames(lapply(csv_files_data_test, read.csv), basename(tools::file_path_sans_ext(csv_files_data_test))), globalenv())
+
+csv_files_data_train <- list.files(path = "./data/UCI HAR dataset/train", pattern = "*.txt", full.names=TRUE)
+list2env(setNames(lapply(csv_files_data_train, read.csv), basename(tools::file_path_sans_ext(csv_files_data_train))), globalenv())
+```
+
+Here are the original txt files and the data frames are named accordingly as you can see in the example for features: 
+```{r echo=FALSE, results=TRUE}
+csv_files_data
+csv_files_data_train
+csv_files_data_train
+head(features)
+```
+
+However, two main data sets are broken and cannot be parsed into data frames without some pain. We transform X_train.txt and X_test.txt into data frames by detecting the fixed widht of the columns. The amount of columns is deducted from the file features, as it has 561 rows.
+```{r echo=FALSE, results=FALSE}
+X_train<-read.fwf("./data/UCI HAR dataset/train/X_train.txt", widths=c(rep(16, 561)))
+X_test<-read.fwf("./data/UCI HAR dataset/test/X_test.txt", widths=c(rep(16, 561)))
+
+#Get column names for X_train and X_test
+features <- read.table("./data/UCI HAR dataset//features.txt", sep=" ")
+```
+
+We removed the non needed row number from the features dataset and name the columns of our important X_test and X_train datasets. The names of these columns are detailed in the accompanying document features_info.txt
+```{r echo=TRUE, results=FALSE}
+features<-features[-1]
+
+#Naming the columns of X_train and X_test
+colnames(X_train)<-features[,1]
+colnames(X_test)<-features[,1]
+```
+
+Then we manually (!) extracted only the mean and standard deviation records (columns) from the data frames. 
+
+```{r echo=FALSE, results=FALSE}
+x_train<-X_train[c(1:6, 41:46, 81:86, 121:126, 161:166, 201, 202, 214,215, 227, 228, 240, 241, 253,254, 266:271, 345, 350, 373,374,375, 424:429, 452:454, 503,504, 513, 516,517, 529, 530, 539, 542,543, 555:561)]
+x_test<-X_test[c(1:6, 41:46, 81:86, 121:126, 161:166, 201, 202, 214,215, 227, 228, 240, 241, 253,254, 266:271, 345, 350, 373,374,375, 424:429, 452:454, 503,504, 513, 516,517, 529, 530, 539, 542,543, 555:561)]
+```
+Then we added columns on users (subject_train) and activity (y_test). Furthermore, we replaced activity codes (1-6) with more descriptive names as given in activity_labels.txt file. 
+```{r echo=FALSE, results=FALSE}
+x_train$subject<-subject_train[,1]
+subject_test<-rbind(subject_test, 24)
+x_test$subject<-subject_test[,1]
+x_train$activity<-y_train[,1]
+
+#x_test has a one missing value and it has been replaced 
+#by the value just before it (assuming it is the same person)
+y_test<-rbind(y_test, 2)
+x_test$activity<-y_test[,1]
+
+#To give the activities a descriptive names, we must create a small function
+transform<-function(x){
+        if(x==1) y<-"walking" else
+        if(x==2) y<-"walking_upstairs" else
+        if(x==3) y <-"walking_downstairs" else 
+        if(x==4) y<-"sitting" else
+        if(x==5) y<-"standing" else
+        if(x==6) y<-"laying" else y<-NA
+return(y)
+}
+
+#And let's now give activities descriptive names in data frams x_test and x_train
+x_train$activityDescr<-lapply(x_train$activity, transform)
+x_test$activityDescr<-lapply(x_test$activity, transform)
+```
+
+Finally we merged our two precious data frames x_train and x_test into a massive clean data frame, transformed that into a matrix and saved a csv file (x_trainAndtest.csv) for future generations to enjoy
+```{r echo=FALSE, results=FALSE}
+#And now, let's merge the data into one massive (but clean) dataset
+x_trainAndtest<-rbind(x_train, x_test)
+
+#And let's save that into a csv file
+x_trainAndtestMatrix<-as.matrix(x_trainAndtest)
+write.csv(x_trainAndtestMatrix, file="x_trainAndtest.csv", row.names=FALSE)
+```
+Resulting matrix is sizable: 
+```{r echo=FALSE, results=TRUE}
+dim(x_trainAndtest)
+```
+
+And finally, we created a second, independent tidy 
+data set with the average of each variable for each activity and each subject. Also this was transformed into a matrix and saved as a csv file (x_averagesSubjectActivity.csv). 
+
+```{r echo=FALSE, results=FALSE, message=FALSE, warning=FALSE}
+#This is pretty easy with aggregate function
+x_averagesSubjectActivity<-aggregate(x_trainAndtest, by=list(x_trainAndtest$activity, x_trainAndtest$subject), mean)
+#We just add back the activity descriptions
+x_averagesSubjectActivity$activityDescr<-lapply(x_averagesSubjectActivity$activity, transform)
+#and write a new clean tidy data set into csv file
+#And let's save that into a csv file
+x_averagesSubjectActivity<-as.matrix(x_averagesSubjectActivity)
+write.csv(x_averagesSubjectActivity, file="x_averagesSubjectActivity.csv", row.names=FALSE)
+```
+
+This second clean and neat data set is much more compact:
+```{r echo=FALSE, results=TRUE}
+dim(x_averagesSubjectActivity)
+```
